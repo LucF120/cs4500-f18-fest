@@ -88,17 +88,14 @@
   (log-cs4500-f18-info "git checkout '~a'" team)
   (parameterize ((current-directory (build-path (current-directory) team)))
     (define tag-name (~a assn-name))
-    (shell/ask-for-help "git" (list "checkout" tag-name))
-    #;(if (git-branch-exists? branch-name)
-      (shell/ask-for-help "git" (list "checkout"branch-name))
-      (let ()
-        (shell/ask-for-help "git" '("checkout" "master"))
-        (shell/ask-for-help "git" '("pull" "origin" "master"))
+    (define branch-name "main")
+    (let ()
+        (shell/ask-for-help "git" '("checkout" "main"))
+        (shell/ask-for-help "git" '("pull" "origin" "main"))
         (define pre-deadline-commit
           (let ([time-str (format "--before='~a'" deadline)])
-            (shell/dontstop "git" (list "rev-list" "--date=iso" "--reverse" "-n" "1" time-str "master"))))
-        (shell/ask-for-help "git" (list "checkout" pre-deadline-commit))
-        (shell/ask-for-help "git" (list "checkout" "-b" branch-name))))
+            (shell/dontstop "git" (list "rev-list" "--date=iso" "--reverse" "-n" "1" time-str "main"))))
+        (shell/ask-for-help "git" (list "checkout" pre-deadline-commit)))
     (void)))
 
 (define (git-branch-exists? branch-name)
@@ -257,19 +254,19 @@
       (ensure-dir this-tests)
       (define expected-files (for*/set ([i (in-range num-tests)]
                                         [in? (in-list '(#t #f))])
-                               (if in? (i-in.json i) (i-out.json i))))
+                               (if in? (i-in.ss i) (i-out.ss i))))
       (define actual-in-dir (for/set ([p (in-list (directory-list this-tests))]) (path->string p)))
       (unless (equal? expected-files actual-in-dir)
         (log-cs4500-f18-info "Extra/Missing test files for ~a" this-name-str)
         (with-output-to-file (build-path this-r AUDIT.txt) #:exists 'append
           (lambda () (printf "Extra or missing files in tests directory\n"))))
       (for* ([i (in-range num-tests)]
-             [test.in (in-value (build-path this-tests (format "~a-in.json" i)))]
-             #:when (let ((out.json (in.json->out.json test.in)))
+             [test.in (in-value (build-path this-tests (format "~a-in.ss" i)))]
+             #:when (let ((out.ss (in.ss->out.ss test.in)))
                       (and (file-exists? test.in)
-                           (file-exists? out.json))))
+                           (file-exists? out.ss))))
         (log-cs4500-f18-info "auditing test '~a'" (path-string->string test.in))
-        (define test.out (in.json->out.json test.in))
+        (define test.out (in.ss->out.ss test.in))
         (if (file-too-large? test.out)
           (with-output-to-file (build-path this-r AUDIT.txt) #:exists 'append
             (lambda () (printf "file ~s is too large (~a bytes)~n" (path-string->string test.in) (file-size test.in))))
@@ -319,24 +316,24 @@
 (define ((cs4500-resource-handler max-seconds max-mb) ex)
   (format "~a~n time limit: ~a seconds~n" (exn-message ex) max-seconds))
 
-(define (in.json->out.json ps)
+(define (in.ss->out.ss ps)
   (define-values [base name _mbd?] (split-path ps))
-  (define m (regexp-match #rx"^([^-]*)-in.json$" (path->string name)))
+  (define m (regexp-match #rx"^([^-]*)-in.ss$" (path->string name)))
   (if m
-    (let ([name.out (format "~a-out.json" (cadr m))])
+    (let ([name.out (format "~a-out.ss" (cadr m))])
       (if (path-string? base)
         (build-path base name.out)
         name.out))
-    (raise-argument-error 'in.json->out.json "(stringof X-in.json)" ps)))
+    (raise-argument-error 'in.ss->out.ss "(stringof X-in.ss)" ps)))
 
 (module+ test
-  (test-case "in.json->out.json"
-    (check-equal? (path-string->string (in.json->out.json "1-in.json")) "1-out.json")
-    (check-equal? (path-string->string (in.json->out.json "foo-in.json")) "foo-out.json")
-    (check-equal? (path-string->string (in.json->out.json "/baz/bar/foo-in.json")) "/baz/bar/foo-out.json")))
+  (test-case "in.ss->out.ss"
+    (check-equal? (path-string->string (in.ss->out.ss "1-in.ss")) "1-out.ss")
+    (check-equal? (path-string->string (in.ss->out.ss "foo-in.ss")) "foo-out.ss")
+    (check-equal? (path-string->string (in.ss->out.ss "/baz/bar/foo-in.ss")) "/baz/bar/foo-out.ss")))
 
-(define (i-in.json i) (format "~a-in.json" i))
-(define (i-out.json i) (format "~a-out.json" i))
+(define (i-in.ss i) (format "~a-in.ss" i))
+(define (i-out.ss i) (format "~a-out.ss" i))
 
 (define (glob/debug pat)
   (define r* (glob pat))

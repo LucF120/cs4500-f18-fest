@@ -160,13 +160,25 @@
                                            (,assignment-name . C))))
                   (build-path "A/B" "C"))))
 
+;; LUC_TODO: CHANGE THIS EACH EXECUTION!
+;; EXAMPLE: [s-exe-names (list s-exe-name "./9/xtype")]
+(define (real-team-exe cfg s-root this-name-str)
+  (let* ([s-exe-name (hash-ref cfg student-exe-name)]
+         [s-exe-names (list s-exe-name)])
+    (or (ormap (λ (exe-name)
+                 (define candidate (build-path s-root this-name-str exe-name))
+                 (and (file-exists? candidate) candidate))
+               s-exe-names)
+        (build-path s-root this-name-str s-exe-name)))) ; bogus path
+  
+
 (define (student-exe-vs-staff-test results-dir cfg)
   ;; for every team name, if haven't run staff tests yet,
   ;;  check that exe exists + is executable,
   ;;  run MF tests, save to file
   ;;  stop and print the process list in-between
   (define s-root (hash-ref cfg student-root))
-  (define s-exe-name (hash-ref cfg student-exe-name))
+  ;(define s-exe-name (hash-ref cfg student-exe-name))
   (define staff-tests (hash-ref cfg staff-tests-path))
   (define *first-time (box #true))
   (define exe-time-limit (or (hash-ref cfg max-seconds) MAX-EXE-SECONDS))
@@ -207,7 +219,7 @@
         (log-cs4500-f18-warning "about to test student executables, current ps -f:~n~a" (current-process-list)))
       (define (write-team-output str)
         (with-output-to-file team-mf (lambda () (displayln str))))
-      (define team-exe (build-path s-root this-name-str s-exe-name))
+      (define team-exe (real-team-exe cfg s-root this-name-str))
       (cond
         [(not (file-exists? team-exe))
          (write-team-output (format "file '~a' does not exist" (path->string team-exe)))]
@@ -358,7 +370,8 @@
     (log-cs4500-f18-info "testfest '~a' vs ..." this-name-sym)
     (log-cs4500-f18-warning "Current ps -f:~n~a" (current-process-list))
     (define this-name-str (~a this-name-sym))
-    (define this-exe (build-path s-root this-name-str s-path))
+    (define this-exe (real-team-exe cfg s-root this-name-str))
+    ;(define this-exe (build-path s-root this-name-str s-path))
     (define student-r-dir (build-path results-dir this-name-str))
     (for ((that-name-sym (in-list name*))
           #:when (and (not (eq? this-name-sym that-name-sym))
@@ -400,7 +413,10 @@
        (not (null? (directory-list ps)))))
 
 (define (has-valid-testfest-exe? team-name results-dir cfg)
-  (define exe-path (build-path (hash-ref cfg student-root) (~a team-name) (hash-ref cfg student-exe-name)))
+  (define s-root (hash-ref cfg student-root))
+  (define this-name-str (~a team-name))
+  (define exe-path (real-team-exe cfg s-root this-name-str))
+ ; (define exe-path (build-path (hash-ref cfg student-root) (~a team-name) (hash-ref cfg student-exe-name)))
   (and (file-exists? exe-path)
        (file-executable? exe-path)))
 

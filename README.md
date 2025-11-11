@@ -1,4 +1,16 @@
 cs4500-f18-fest
+
+# IMPORTANT CHANGES BY ME (Luc)
+```
+The teams are no longer in the manifest file.
+To decouple it, there's a require line in main.rkt
+(file "/course/cs4400f25/ta4400/TEAMS_DONT_TOUCH.rkt")
+- There should be a list of strings of team names in this file.
+- The manifest still has team-name*, but it is empty
+
+There is an other-exe-names variable in this same TEAMS_DONT_TOUCH.rkt file. This is for alternative exe names.
+- This can be used if I'm rerunning for a group that made a small typo in the exe name. 
+```
 ===
 
 Package for running a TEST FEST on student submissions.

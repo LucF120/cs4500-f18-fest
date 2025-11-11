@@ -24,12 +24,15 @@
   (only-in racket/format ~a)
   (only-in racket/set for/set for*/set set-subtract set-empty? set->list)
   (only-in gregor ~t now)
-  cs4500-f18-fest/private/config)
+  cs4500-f18-fest/private/config
+  (file "/course/cs4400f25/ta4400/TEAMS_DONT_TOUCH.rkt"))
 
 (module+ test
   (require rackunit))
 
 ;; =============================================================================
+
+(define team-name* (map (lambda (x) (string->symbol x)) teams))
 
 (define (testfest cfg)
   (define assn-name (hash-ref cfg assignment-name))
@@ -61,7 +64,7 @@
   (define assn-name (hash-ref cfg assignment-name))
   (define deadline (hash-ref cfg student-deadline))
   (parameterize ([current-directory gits-dir])
-    (for ((team-sym (in-list (hash-ref cfg team-name*))))
+    (for ((team-sym (in-list team-name*)))
       (define team (symbol->string team-sym))
       (ensure-git-dir team)
       (git-checkout team assn-name deadline))))
@@ -160,11 +163,9 @@
                                            (,assignment-name . C))))
                   (build-path "A/B" "C"))))
 
-;; LUC_TODO: CHANGE THIS EACH EXECUTION!
-;; EXAMPLE: [s-exe-names (list s-exe-name "./9/xtype")]
 (define (real-team-exe cfg s-root this-name-str)
   (let* ([s-exe-name (hash-ref cfg student-exe-name)]
-         [s-exe-names (list s-exe-name)])
+         [s-exe-names (cons s-exe-name other-exe-names)])
     (or (ormap (λ (exe-name)
                  (define candidate (build-path s-root this-name-str exe-name))
                  (and (file-exists? candidate) candidate))
@@ -183,7 +184,7 @@
   (define *first-time (box #true))
   (define exe-time-limit (or (hash-ref cfg max-seconds) MAX-EXE-SECONDS))
   (define assn-name-str (~a (hash-ref cfg assignment-name)))
-  (for ((this-name-sym (in-list (hash-ref cfg team-name*))))
+  (for ((this-name-sym (in-list team-name*)))
     (define this-name-str (symbol->string this-name-sym))
     (define team-r-dir (build-path results-dir this-name-str))
     (void (ensure-dir team-r-dir))
@@ -246,7 +247,7 @@
   ;;  run the staff exe on each test ONE BY ONE, check for "PASSED"
   ;;  concat the outputs into one file,
   ;;  save valid tests into results dir
-  (define name* (hash-ref cfg team-name*))
+  (define name* team-name*)
   (define staff-exe (hash-ref cfg staff-exe-path))
   (define test-path (hash-ref cfg student-test-name))
   (define test-name (path-string->string (file-name-from-path test-path)))
@@ -361,7 +362,7 @@
   ;;   run team-exe on OTHER-team-tests,
   ;;   save results to a file
   ;; (sandboxing would be nice, but its not essential)
-  (define name* (hash-ref cfg team-name*))
+  (define name* team-name*)
   (define s-root (hash-ref cfg student-root))
   (define s-path (hash-ref cfg student-exe-name))
   (define exe-time-limit (or (hash-ref cfg max-seconds) MAX-EXE-SECONDS))

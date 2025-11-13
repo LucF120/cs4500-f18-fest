@@ -92,13 +92,16 @@
   (parameterize ((current-directory (build-path (current-directory) team)))
     (define tag-name (~a assn-name))
     (define branch-name "main")
+    (define respect-deadline? (not (member team ignore-deadline-teams)))
     (let ()
         (shell/ask-for-help "git" '("checkout" "main"))
         (shell/ask-for-help "git" '("pull" "origin" "main"))
-        (define pre-deadline-commit
-          (let ([time-str (format "--before='~a'" deadline)])
-            (shell/dontstop "git" (list "rev-list" "--date=iso" "--reverse" "-n" "1" time-str "main"))))
-        (shell/ask-for-help "git" (list "checkout" pre-deadline-commit)))
+        (if respect-deadline?
+            (let [(pre-deadline-commit
+                   (let ([time-str (format "--before='~a'" deadline)])
+                     (shell/dontstop "git" (list "rev-list" "--date=iso" "--reverse" "-n" "1" time-str "main"))))]
+              (shell/ask-for-help "git" (list "checkout" pre-deadline-commit)))
+            (log-cs4500-f18-info "IGNORING DEADLINE FOR ~a" team)))
     (void)))
 
 (define (git-branch-exists? branch-name)

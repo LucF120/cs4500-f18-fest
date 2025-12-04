@@ -100,7 +100,16 @@
             (let [(pre-deadline-commit
                    (let ([time-str (format "--before='~a'" deadline)])
                      (shell/dontstop "git" (list "rev-list" "--date=iso" "--reverse" "-n" "1" time-str "main"))))]
-              (shell/ask-for-help "git" (list "checkout" pre-deadline-commit)))
+              (shell/ask-for-help "git" (list "checkout" pre-deadline-commit))
+              ;; Now restore specific files from main
+              (when (not (null? files-to-update))
+                (for-each (lambda (file)
+                            (shell/ask-for-help "git" (list "checkout" "main" "--" file)))
+                          files-to-update))
+	      (when (not (null? files-to-remove))
+	        (for-each (lambda (file)
+		            (shell/ask-for-help "rm" file))
+			  files-to-remove)))
             (log-cs4500-f18-info "IGNORING DEADLINE FOR ~a" team)))
     (void)))
 
